@@ -8,12 +8,16 @@ VideoEncoder::VideoEncoder(const Config& cfg) : m_cfg(cfg) {
 
 VideoEncoder::~VideoEncoder() { close(); }
 
-bool VideoEncoder::open() {
+bool VideoEncoder::open(int width, int height) {
+    m_enc_width = width;
+    m_enc_height = height;
+
     if (!init_format()) return false;
     if (!init_codec()) return false;
 
     m_is_open = true;
-    std::cout << "[Encoder] Opened: " << m_cfg.output_path << std::endl;
+    std::cout << "[Encoder] Opened: " << m_enc_width << "x" << m_enc_height
+              << " -> " << m_cfg.output_path << std::endl;
     return true;
 }
 
@@ -47,8 +51,8 @@ bool VideoEncoder::init_codec() {
     m_stream = avformat_new_stream(m_fmt_ctx, nullptr);
     m_codec_ctx = avcodec_alloc_context3(m_codec);
 
-    m_codec_ctx->width = m_cfg.capture_width;
-    m_codec_ctx->height = m_cfg.capture_height;
+    m_codec_ctx->width = m_enc_width;
+    m_codec_ctx->height = m_enc_height;
     m_codec_ctx->time_base = av_make_q(1, m_cfg.output_fps);
     m_codec_ctx->framerate = av_make_q(m_cfg.output_fps, 1);
     m_codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -98,14 +102,14 @@ bool VideoEncoder::init_codec() {
 
     // YUV frame for conversion
     m_yuv_frame->format = AV_PIX_FMT_YUV420P;
-    m_yuv_frame->width = m_cfg.capture_width;
-    m_yuv_frame->height = m_cfg.capture_height;
+    m_yuv_frame->width = m_enc_width;
+    m_yuv_frame->height = m_enc_height;
     av_frame_get_buffer(m_yuv_frame, 0);
 
     // SwsContext: BGR24 -> YUV420P
     m_sws_ctx = sws_getContext(
-        m_cfg.capture_width, m_cfg.capture_height, AV_PIX_FMT_BGR24,
-        m_cfg.capture_width, m_cfg.capture_height, AV_PIX_FMT_YUV420P,
+        m_enc_width, m_enc_height, AV_PIX_FMT_BGR24,
+        m_enc_width, m_enc_height, AV_PIX_FMT_YUV420P,
         SWS_BILINEAR, nullptr, nullptr, nullptr);
 
     m_pts = 0;
@@ -119,7 +123,7 @@ bool VideoEncoder::write(const cv::Mat& frame) {
     const uint8_t* src_data[1] = { frame.data };
     int src_linesize[1] = { (int)frame.step };
 
-    sws_scale(m_sws_ctx, src_data, src_linesize, 0, m_cfg.capture_height,
+    sws_scale(m_sws_ctx, src_data, src_linesize, 0, m_enc_height,
               m_yuv_frame->data, m_yuv_frame->linesize);
 
     m_yuv_frame->pts = m_pts++;

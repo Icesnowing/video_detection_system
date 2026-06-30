@@ -22,7 +22,7 @@ public:
     VideoEncoder(const Config& cfg);
     ~VideoEncoder();
 
-    bool open();
+    bool open(int width, int height);
     bool write(const cv::Mat& frame);
     void close();
 
@@ -33,6 +33,8 @@ private:
     bool init_format();
 
     Config m_cfg;
+    int m_enc_width = 0;
+    int m_enc_height = 0;
     size_t m_frame_count = 0;
 
     AVFormatContext* m_fmt_ctx = nullptr;

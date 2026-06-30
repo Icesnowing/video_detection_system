@@ -42,7 +42,7 @@ public:
 
         m_inference.warmup(5);
 
-        if (!m_encoder.open()) {
+        if (!m_encoder.open(m_decoder.width(), m_decoder.height())) {
             std::cerr << "[Pipeline] WARNING: Encoder failed." << std::endl;
         }
 
