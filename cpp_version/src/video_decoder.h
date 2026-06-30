@@ -9,6 +9,7 @@ extern "C" {
 #include <libavutil/imgutils.h>
 #include <libavutil/hwcontext.h>
 #include <libswscale/swscale.h>
+#include <libavutil/display.h>
 }
 
 #include <string>
@@ -43,8 +44,11 @@ private:
     Config m_cfg;
     int m_width = 0;
     int m_height = 0;
+    int m_codec_width = 0;
+    int m_codec_height = 0;
     double m_fps = 0.0;
     size_t m_frame_count = 0;
+    int m_rotation = 0;
 
     AVFormatContext* m_fmt_ctx = nullptr;
     AVCodecContext* m_codec_ctx = nullptr;

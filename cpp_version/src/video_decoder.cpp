@@ -79,12 +79,38 @@ bool VideoDecoder::find_video_stream() {
     AVStream* stream = m_fmt_ctx->streams[m_video_stream_idx];
     AVCodecParameters* params = stream->codecpar;
 
-    m_width = params->width;
-    m_height = params->height;
+    m_codec_width = params->width;
+    m_codec_height = params->height;
 
-    if (m_width <= 0 || m_height <= 0) {
-        m_width = m_cfg.capture_width;
-        m_height = m_cfg.capture_height;
+    if (m_codec_width <= 0 || m_codec_height <= 0) {
+        m_codec_width = m_cfg.capture_width;
+        m_codec_height = m_cfg.capture_height;
+    }
+
+    // Read display rotation metadata (common in phone videos)
+    for (int i = 0; i < params->nb_coded_side_data; i++) {
+        const auto& sd = params->coded_side_data[i];
+        if (sd.type == AV_PKT_DATA_DISPLAYMATRIX && sd.size >= 9 * 4) {
+            double rotation = av_display_rotation_get((const int32_t*)sd.data);
+            int rot_deg = (int)(rotation + 360.0) % 360;
+            if (rot_deg == 90 || rot_deg == 270) {
+                m_rotation = rot_deg;
+                std::cout << "[Decoder] Detected " << rot_deg << "° rotation" << std::endl;
+            } else if (rot_deg == 180) {
+                m_rotation = 180;
+                std::cout << "[Decoder] Detected 180° rotation" << std::endl;
+            }
+            break;
+        }
+    }
+
+    // Set display dimensions (swap for 90/270 rotation)
+    if (m_rotation == 90 || m_rotation == 270) {
+        m_width = m_codec_height;
+        m_height = m_codec_width;
+    } else {
+        m_width = m_codec_width;
+        m_height = m_codec_height;
     }
 
     m_fps = av_q2d(stream->avg_frame_rate);
@@ -118,16 +144,16 @@ bool VideoDecoder::setup_decoder() {
         return false;
     }
 
-    // BGR frame setup
+    // BGR frame setup (use codec dimensions, rotation applied later)
     m_bgr_frame->format = AV_PIX_FMT_BGR24;
-    m_bgr_frame->width = m_width;
-    m_bgr_frame->height = m_height;
+    m_bgr_frame->width = m_codec_width;
+    m_bgr_frame->height = m_codec_height;
     av_frame_get_buffer(m_bgr_frame, 0);
 
     // SwsContext for format conversion
     m_sws_ctx = sws_getContext(
-        m_width, m_height, (AVPixelFormat)params->format,
-        m_width, m_height, AV_PIX_FMT_BGR24,
+        m_codec_width, m_codec_height, (AVPixelFormat)params->format,
+        m_codec_width, m_codec_height, AV_PIX_FMT_BGR24,
         SWS_BILINEAR, nullptr, nullptr, nullptr
     );
 
@@ -164,16 +190,25 @@ bool VideoDecoder::read(cv::Mat& frame) {
             av_frame_copy(m_bgr_frame, m_frame);
         } else {
             sws_scale(m_sws_ctx,
-                      m_frame->data, m_frame->linesize, 0, m_height,
+                      m_frame->data, m_frame->linesize, 0, m_codec_height,
                       m_bgr_frame->data, m_bgr_frame->linesize);
         }
 
         av_frame_unref(m_frame);
 
-        // Zero-copy wrap into cv::Mat
-        frame = cv::Mat(m_height, m_width, CV_8UC3,
+        // Zero-copy wrap into cv::Mat (codec dimensions, rotation applied next)
+        frame = cv::Mat(m_codec_height, m_codec_width, CV_8UC3,
                         m_bgr_frame->data[0],
                         m_bgr_frame->linesize[0]).clone();
+
+        // Apply rotation if needed (phone videos)
+        if (m_rotation == 90) {
+            cv::rotate(frame, frame, cv::ROTATE_90_COUNTERCLOCKWISE);
+        } else if (m_rotation == 180) {
+            cv::rotate(frame, frame, cv::ROTATE_180);
+        } else if (m_rotation == 270) {
+            cv::rotate(frame, frame, cv::ROTATE_90_CLOCKWISE);
+        }
 
         m_frame_count++;
         return true;
