@@ -1,0 +1,59 @@
+# =============================================================================
+# Video Detection System Configuration
+# =============================================================================
+
+# --- Model ---
+model:
+  onnx_path: "models/yolo11n.onnx"          # ONNX model path
+  confidence_threshold: 0.25                 # Minimum confidence for detections
+  nms_threshold: 0.45                        # IoU threshold for NMS
+  max_detections: 300                        # Maximum detections per frame
+  input_width: 640                           # Model input width
+  input_height: 640                          # Model input height
+  class_names:                               # COCO class names (subset)
+    - person;bicycle;car;motorcycle;airplane;bus;train;truck;boat;traffic light
+    - fire hydrant;stop sign;parking meter;bench;bird;cat;dog;horse;sheep;cow
+    - elephant;bear;zebra;giraffe;backpack;umbrella;handbag;tie;suitcase;frisbee
+    - skis;snowboard;sports ball;kite;baseball bat;baseball glove;skateboard;surfboard;tennis racket;bottle
+    - wine glass;cup;fork;knife;spoon;bowl;banana;apple;sandwich;orange
+    - broccoli;carrot;hot dog;pizza;donut;cake;chair;couch;potted plant;bed
+    - dining table;toilet;tv;laptop;mouse;remote;keyboard;cell phone;microwave;oven
+    - toaster;sink;refrigerator;book;clock;vase;scissors;teddy bear;hair drier;toothbrush
+
+# --- Video Source ---
+source:
+  type: "video"                              # "usb_camera" | "video" | "rtsp"
+  path: ""                                   # File path / RTSP URL / camera index
+  width: 1280                                # Capture width
+  height: 720                                # Capture height
+  fps: 30                                    # Target FPS
+
+# --- Decoder (FFmpeg) ---
+decoder:
+  hw_accel: "none"                           # "cuda" | "vaapi" | "qsv" | "none"
+  hw_device: ""                              # Hardware device path (e.g. /dev/dri/renderD128 for VAAPI)
+  output_format: "bgr24"                     # Pixel format for OpenCV
+
+# --- Inference ---
+inference:
+  provider: "CPUExecutionProvider"           # ONNX Runtime execution provider
+  intra_op_threads: 0                        # 0 = auto
+  inter_op_threads: 0                        # 0 = auto
+  graph_optimization_level: "99"             # ORT_ENABLE_ALL = 99
+
+# --- Encoder (FFmpeg) ---
+encoder:
+  output_path: "video_output/output.mp4"     # Output video path
+  codec: "libx264"                           # Video codec
+  preset: "fast"                             # Encoding preset
+  crf: 23                                    # Quality (lower = better)
+  output_fps: 30                             # Output FPS
+  rtsp_push_url: ""                          # RTSP push URL (e.g. rtsp://server/live/stream)
+
+# --- Display ---
+display:
+  show_window: true                          # Show OpenCV preview window
+  window_name: "Video Detection"             # Window title
+  draw_labels: true                          # Draw class labels on boxes
+  box_thickness: 2                           # Detection box border thickness
+  font_scale: 0.5                            # Label font scale

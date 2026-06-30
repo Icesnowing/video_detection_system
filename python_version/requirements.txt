@@ -1,0 +1,9 @@
+torch>=2.0.0
+torchvision
+numpy>=1.22.0
+opencv-python>=4.5.0
+onnx>=1.14.0
+onnxruntime>=1.15.0
+ultralytics>=8.0.0
+omegaconf>=2.1.0
+av>=10.0.0
