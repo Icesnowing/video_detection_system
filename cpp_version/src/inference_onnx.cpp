@@ -4,8 +4,8 @@
 #include <algorithm>
 
 InferenceEngine::InferenceEngine(const Config& cfg) : m_cfg(cfg) {
-    m_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "VideoDetection");
-    m_sess_opts = std::make_unique<Ort::SessionOptions>();
+    m_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "VideoDetection"); //创建ONNX Runtime环境
+    m_sess_opts = std::make_unique<Ort::SessionOptions>(); //创建ONNX Runtime会话选项
 
     // Graph optimization
     m_sess_opts->SetGraphOptimizationLevel(

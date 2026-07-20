@@ -18,16 +18,32 @@ Preprocessor::PreprocessResult Preprocessor::process(const cv::Mat& frame) {
     rgb.convertTo(rgb, CV_32FC3, 1.0 / 255.0);
 
     // HWC -> CHW layout
-    result.shape = {1, 3, m_input_height, m_input_width};
+    result.shape = {1, 3, m_input_height, m_input_width}; //4维张量，NCHW 格式（PyTorch、Caffe 等框架使用）
     size_t total = 3 * m_input_height * m_input_width;
     result.tensor.resize(total);
 
+    /*
+    原始OpenCV HWC布局（Height-Width-Channel）：
+    内存布局（按行存储）：
+    行0: [B00,G00,R00, B01,G01,R01, B02,G02,R02, ...]
+    行1: [B10,G10,R10, B11,G11,R11, B12,G12,R12, ...]
+    行2: [B20,G20,R20, B21,G21,R21, B22,G22,R22, ...]
+    
+    CHW布局（Channel-Height-Width）：
+    内存布局（按通道存储）：
+    通道B: [B00, B01, B02, ..., B10, B11, B12, ..., B20, B21, B22, ...]
+    通道G: [G00, G01, G02, ..., G10, G11, G12, ..., G20, G21, G22, ...]
+    通道R: [R00, R01, R02, ..., R10, R11, R12, ..., R20, R21, R22, ...]
+    
+    */
     // Unroll HWC to CHW
-    for (int c = 0; c < 3; c++) {
+    for (int c = 0; c < 3; c++) { //所有像素按通道连续存储
         for (int h = 0; h < m_input_height; h++) {
             for (int w = 0; w < m_input_width; w++) {
                 size_t idx = c * m_input_height * m_input_width + h * m_input_width + w;
-                result.tensor[idx] = rgb.at<cv::Vec3f>(h, w)[c];
+                //cv::Vec3f：包含 3 个 float 值的向量 [B, G, R]（注意：OpenCV 使用 BGR 顺序！）
+                //.at<cv::Vec3f>(h, w)：访问第 h 行 w 列的像素，返回一个 cv::Vec3f 向量
+                result.tensor[idx] = rgb.at<cv::Vec3f>(h, w)[c]; //获取第 c 个通道的像素值
             }
         }
     }

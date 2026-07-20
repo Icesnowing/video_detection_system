@@ -130,7 +130,12 @@ target_link_libraries(video_detection PRIVATE dl)
 
 # ---- Compiler flags ----
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(video_detection PRIVATE -Wall -Wextra -O2 -march=native)
+    target_compile_options(video_detection PRIVATE -Wall -Wextra -march=native
+        $<$<CONFIG:Debug>:-g -O0>
+        $<$<CONFIG:Release>:-O2>
+        $<$<CONFIG:RelWithDebInfo>:-O2 -g>
+        $<$<CONFIG:MinSizeRel>:-Os>
+    )
 endif()
 
 # ---- Install ----

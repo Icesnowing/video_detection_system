@@ -50,12 +50,12 @@ private:
     size_t m_frame_count = 0;
     int m_rotation = 0;
 
-    AVFormatContext* m_fmt_ctx = nullptr;
-    AVCodecContext* m_codec_ctx = nullptr;
-    const AVCodec* m_codec = nullptr;
+    AVFormatContext* m_fmt_ctx = nullptr; //视频格式上下文
+    AVCodecContext* m_codec_ctx = nullptr; //视频编码上下文
+    const AVCodec* m_codec = nullptr; //视频编码器
     int m_video_stream_idx = -1;
 
-    SwsContext* m_sws_ctx = nullptr;
+    SwsContext* m_sws_ctx = nullptr; //视频缩放上下文
     AVFrame* m_frame = nullptr;
     AVFrame* m_bgr_frame = nullptr;
 

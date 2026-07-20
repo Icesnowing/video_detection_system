@@ -79,7 +79,7 @@ public:
             std::vector<int64_t> output_shape;
             m_inference.infer(preproc.tensor, preproc.shape,
                               output_data, output_shape);
-
+            
             auto t1 = std::chrono::high_resolution_clock::now();
             double latency = std::chrono::duration<double, std::milli>(t1 - t0).count();
             total_inf_time += latency;

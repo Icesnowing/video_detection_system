@@ -40,31 +40,35 @@ std::vector<Detection> PostProcessor::process(
     float ratio_w, float ratio_h,
     int pad_left, int pad_top) {
 
-    // output_shape: {1, 84, N} -> N predictions, each with 4 bbox + 80 class scores
+    // output_shape: {1, 84, N} → N predictions, each with 4 bbox + 80 class scores
+    // row-major flat layout: offset(channel_j, prediction_i) = j * N + i
+    //   channels [0:4]  = bbox (cx, cy, w, h)
+    //   channels [4:84] = class scores
+
     if (output_shape.size() < 3) return {};
 
     int num_classes = output_shape[1] - 4;  // 80 for COCO
     int num_predictions = output_shape[2];
-
-    // output is {1, 84, N}, transpose to {N, 84}
-    // Each column j: output[j * 84 + i] for i in [0, 83]
-    //   [0:4] = bbox (cx, cy, w, h)
-    //   [4:84] = class scores
 
     std::vector<float> scores(num_predictions);
     std::vector<int> class_ids(num_predictions);
     std::vector<cv::Rect> boxes(num_predictions);
     std::vector<bool> valid(num_predictions, false);
 
-    int step = 84;  // 4 + num_classes
+    // output flat layout (row-major): (1, 84, N) → offset(j, i) = j * N + i
+    int total_feats = num_classes + 4;  // 84
     for (int i = 0; i < num_predictions; i++) {
-        const float* row = &output[i * step];
+        // Access prediction i across all 84 channels
+        float cx = output[0 * num_predictions + i];
+        float cy = output[1 * num_predictions + i];
+        float w  = output[2 * num_predictions + i];
+        float h  = output[3 * num_predictions + i];
 
         // Find max class score
         float max_score = 0.0f;
         int max_class = 0;
         for (int c = 0; c < num_classes; c++) {
-            float score = row[4 + c];
+            float score = output[(4 + c) * num_predictions + i];
             if (score > max_score) {
                 max_score = score;
                 max_class = c;
@@ -72,12 +76,9 @@ std::vector<Detection> PostProcessor::process(
         }
 
         if (max_score < m_cfg.confidence_threshold) continue;
+        if (max_class != 0) continue;  // only detect person
 
         // Decode bbox: cx, cy, w, h -> x1, y1, x2, y2
-        float cx = row[0];
-        float cy = row[1];
-        float w = row[2];
-        float h = row[3];
 
         int x1 = (int)(cx - w / 2.0f);
         int y1 = (int)(cy - h / 2.0f);
