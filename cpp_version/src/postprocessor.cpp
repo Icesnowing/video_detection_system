@@ -44,11 +44,12 @@ std::vector<Detection> PostProcessor::process(
     // row-major flat layout: offset(channel_j, prediction_i) = j * N + i
     //   channels [0:4]  = bbox (cx, cy, w, h)
     //   channels [4:84] = class scores
+    // 所有预测框的同一通道数据连续存储。
 
     if (output_shape.size() < 3) return {};
 
     int num_classes = output_shape[1] - 4;  // 80 for COCO
-    int num_predictions = output_shape[2];
+    int num_predictions = output_shape[2]; // N 个预测框
 
     std::vector<float> scores(num_predictions);
     std::vector<int> class_ids(num_predictions);
@@ -58,7 +59,7 @@ std::vector<Detection> PostProcessor::process(
     // output flat layout (row-major): (1, 84, N) → offset(j, i) = j * N + i
     int total_feats = num_classes + 4;  // 84
     for (int i = 0; i < num_predictions; i++) {
-        // Access prediction i across all 84 channels
+        // Access prediction i across all 84 channels 提取边界框
         float cx = output[0 * num_predictions + i];
         float cy = output[1 * num_predictions + i];
         float w  = output[2 * num_predictions + i];
@@ -79,7 +80,7 @@ std::vector<Detection> PostProcessor::process(
         if (max_class != 0) continue;  // only detect person
 
         // Decode bbox: cx, cy, w, h -> x1, y1, x2, y2
-
+        // 将YOLO的 (center_x, center_y, width, height) 格式转换为OpenCV的 (x1, y1, x2, y2) 格式。
         int x1 = (int)(cx - w / 2.0f);
         int y1 = (int)(cy - h / 2.0f);
         int x2 = (int)(cx + w / 2.0f);
@@ -87,7 +88,7 @@ std::vector<Detection> PostProcessor::process(
 
         scores[i] = max_score;
         class_ids[i] = max_class;
-        boxes[i] = cv::Rect(x1, y1, x2 - x1, y2 - y1);
+        boxes[i] = cv::Rect(x1, y1, x2 - x1, y2 - y1); // 用 cv::Rect 存储矩形（参数为 x, y, width, height）
         valid[i] = true;
     }
 
@@ -121,7 +122,7 @@ std::vector<Detection> PostProcessor::process(
         std::vector<int> cls_indices;
 
         for (size_t i = 0; i < valid_classes.size(); i++) {
-            if (valid_classes[i] == c) {
+            if (valid_classes[i] == c) {  // 收集类别等于c的所有预测框
                 cls_boxes.push_back(valid_boxes[i]);
                 cls_scores.push_back(valid_scores[i]);
                 cls_indices.push_back(i);
@@ -258,7 +259,7 @@ void Renderer::draw(cv::Mat& frame, const std::vector<Detection>& detections) {
             ? m_colors[det.class_id]
             : cv::Scalar(0, 255, 0);
 
-        cv::rectangle(frame, det.bbox, color, m_box_thickness);
+        cv::rectangle(frame, det.bbox, color, m_box_thickness); //绘制矩形框
 
         if (m_draw_labels) {
             char label[256];

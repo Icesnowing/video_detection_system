@@ -1,9 +1,11 @@
 #include "common.h"
 #include "video_decoder.h"
+#include "yuv_decoder.h"
 #include "preprocessor.h"
 #include "inference_onnx.h"
 #include "postprocessor.h"
 #include "video_encoder.h"
+#include "yuv_encoder.h"
 
 #include <iostream>
 #include <chrono>
@@ -21,18 +23,27 @@ public:
     DetectionPipeline(const Config& cfg)
         : m_cfg(cfg),
           m_decoder(cfg),
+          m_yuv_decoder(cfg),
           m_preprocessor(cfg.input_width, cfg.input_height),
           m_inference(cfg),
           m_postprocessor(cfg),
           m_renderer(cfg),
-          m_encoder(cfg) {}
+          m_encoder(cfg),
+          m_yuv_encoder(cfg) {}
 
     bool setup() {
         std::cout << "[Pipeline] Initializing..." << std::endl;
 
-        if (!m_decoder.open()) {
-            std::cerr << "[Pipeline] ERROR: Failed to open decoder." << std::endl;
-            return false;
+        if (m_cfg.source_type == "yuv") {
+            if (!m_yuv_decoder.open()) {
+                std::cerr << "[Pipeline] ERROR: Failed to open YUV decoder." << std::endl;
+                return false;
+            }
+        } else {
+            if (!m_decoder.open()) {
+                std::cerr << "[Pipeline] ERROR: Failed to open decoder." << std::endl;
+                return false;
+            }
         }
 
         if (!m_inference.load()) {
@@ -42,8 +53,19 @@ public:
 
         m_inference.warmup(5);
 
-        if (!m_encoder.open(m_decoder.width(), m_decoder.height())) {
-            std::cerr << "[Pipeline] WARNING: Encoder failed." << std::endl;
+        int out_w = (m_cfg.source_type == "yuv") ? m_yuv_decoder.width() : m_decoder.width();
+        int out_h = (m_cfg.source_type == "yuv") ? m_yuv_decoder.height() : m_decoder.height();
+
+        bool is_yuv_out = m_cfg.output_path.size() >= 4 &&
+                          m_cfg.output_path.substr(m_cfg.output_path.size() - 4) == ".yuv";
+        if (is_yuv_out) {
+            if (!m_yuv_encoder.open(out_w, out_h)) {
+                std::cerr << "[Pipeline] WARNING: YUV encoder failed." << std::endl;
+            }
+        } else {
+            if (!m_encoder.open(out_w, out_h)) {
+                std::cerr << "[Pipeline] WARNING: Encoder failed." << std::endl;
+            }
         }
 
         std::cout << "[Pipeline] Initialization complete." << std::endl;
@@ -64,7 +86,10 @@ public:
         while (g_running) {
             // 1. Decode
             cv::Mat frame;
-            if (!m_decoder.read(frame)) {
+            bool ok = (m_cfg.source_type == "yuv")
+                ? m_yuv_decoder.read(frame)
+                : m_decoder.read(frame);
+            if (!ok) {
                 std::cout << "[Pipeline] End of stream." << std::endl;
                 break;
             }
@@ -95,7 +120,13 @@ public:
             m_renderer.draw(frame, detections);
 
             // 6. Encode
-            m_encoder.write(frame);
+            bool is_yuv_out = m_cfg.output_path.size() >= 4 &&
+                              m_cfg.output_path.substr(m_cfg.output_path.size() - 4) == ".yuv";
+            if (is_yuv_out) {
+                m_yuv_encoder.write(frame);
+            } else {
+                m_encoder.write(frame);
+            }
 
             // 7. Display
             if (m_cfg.show_window) {
@@ -127,7 +158,9 @@ public:
 
     void shutdown() {
         m_decoder.close();
+        m_yuv_decoder.close();
         m_encoder.close();
+        m_yuv_encoder.close();
         if (m_cfg.show_window) cv::destroyAllWindows();
         std::cout << "[Pipeline] Shutdown complete." << std::endl;
     }
@@ -135,9 +168,11 @@ public:
 private:
     Config m_cfg;
     VideoDecoder m_decoder;
+    YuvDecoder m_yuv_decoder;
     Preprocessor m_preprocessor;
     InferenceEngine m_inference;
     PostProcessor m_postprocessor;
     Renderer m_renderer;
     VideoEncoder m_encoder;
+    YuvEncoder m_yuv_encoder;
 };

@@ -24,11 +24,19 @@ struct Config {
     int input_height = 640;
 
     // Source
-    std::string source_type = "video";  // "usb_camera", "video", "rtsp"
+    std::string source_type = "video";  // "usb_camera", "video", "rtsp", "yuv"
     std::string source_path = "0";
     int capture_width = 1280;
     int capture_height = 720;
     int capture_fps = 30;
+
+    // YUV raw input
+    std::string yuv_format = "i420";    // "i420", "nv12", "nv21", "yuyv"
+    int yuv_width = 1280;
+    int yuv_height = 720;
+
+    // YUV raw output (if output path has .yuv extension, use raw YUV)
+    std::string yuv_output_format = "i420";
 
     // Decoder
     std::string hw_accel = "none";

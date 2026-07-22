@@ -12,6 +12,7 @@
  *   ./video_detection --source video --path test.mp4
  *   ./video_detection --source usb_camera --path /dev/video0
  *   ./video_detection --source rtsp --path rtsp://192.168.1.100:554/stream
+ *   ./video_detection --source yuv --path input.yuv --yuv-format i420 --yuv-size 1920x1080
  *   ./video_detection --benchmark
  */
 
@@ -23,15 +24,18 @@
 static void print_usage(const char* prog) {
     std::cout << "Usage: " << prog << " [OPTIONS]\n\n"
               << "Options:\n"
-              << "  --source TYPE       Video source: usb_camera, video, rtsp (default: video)\n"
-              << "  --path PATH         Camera index, file path, or RTSP URL\n"
+              << "  --source TYPE       Video source: usb_camera, video, rtsp, yuv (default: video)\n"
+              << "  --path PATH         Camera index, file path, RTSP URL, or YUV file path\n"
               << "  --model PATH        ONNX model path (default: models/yolo11n.onnx)\n"
               << "  --confidence FLOAT  Confidence threshold (default: 0.25)\n"
               << "  --nms FLOAT         NMS IoU threshold (default: 0.45)\n"
               << "  --width INT         Capture width (default: 1280)\n"
               << "  --height INT        Capture height (default: 720)\n"
+              << "  --yuv-format FMT    YUV format: i420, nv12, nv21, yuyv (default: i420)\n"
+              << "  --yuv-size WxH      YUV frame dimensions, e.g. 1920x1080\n"
               << "  --no-display        Disable preview window\n"
-              << "  --output PATH       Output video path\n"
+              << "  --output PATH       Output video path (use .yuv extension for raw YUV)\n"
+              << "  --codec NAME        Output codec: libx264, libx265 (default: libx264)\n"
               << "  --benchmark         Run inference benchmark\n"
               << "  --help              Show this help\n"
               << std::endl;
@@ -64,6 +68,17 @@ int main(int argc, char* argv[]) {
             cfg.show_window = false;
         } else if (arg == "--output" && i + 1 < argc) {
             cfg.output_path = argv[++i];
+        } else if (arg == "--codec" && i + 1 < argc) {
+            cfg.codec = argv[++i];
+        } else if (arg == "--yuv-format" && i + 1 < argc) {
+            cfg.yuv_format = argv[++i];
+        } else if (arg == "--yuv-size" && i + 1 < argc) {
+            std::string size_str = argv[++i];
+            size_t x = size_str.find('x');
+            if (x != std::string::npos) {
+                cfg.yuv_width = std::stoi(size_str.substr(0, x));
+                cfg.yuv_height = std::stoi(size_str.substr(x + 1));
+            }
         } else if (arg == "--benchmark") {
             // Benchmark mode
             InferenceEngine engine(cfg);

@@ -85,10 +85,12 @@ endif()
 set(SOURCES
     src/main.cpp
     src/video_decoder.cpp
+    src/yuv_decoder.cpp
     src/preprocessor.cpp
     src/inference_onnx.cpp
     src/postprocessor.cpp
     src/video_encoder.cpp
+    src/yuv_encoder.cpp
 )
 
 # ---- Executable ----
