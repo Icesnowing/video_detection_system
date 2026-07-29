@@ -16,7 +16,7 @@ Preprocessor::PreprocessResult Preprocessor::process(const cv::Mat& frame) {
     cv::Mat rgb;
     cv::cvtColor(letterboxed, rgb, cv::COLOR_BGR2RGB);
     rgb.convertTo(rgb, CV_32FC3, 1.0 / 255.0);
-
+    
     // HWC -> CHW layout
     result.shape = {1, 3, m_input_height, m_input_width}; //4维张量，NCHW 格式（PyTorch、Caffe 等框架使用）
     size_t total = 3 * m_input_height * m_input_width;
@@ -41,7 +41,7 @@ Preprocessor::PreprocessResult Preprocessor::process(const cv::Mat& frame) {
         for (int h = 0; h < m_input_height; h++) {
             for (int w = 0; w < m_input_width; w++) {
                 size_t idx = c * m_input_height * m_input_width + h * m_input_width + w;
-                //cv::Vec3f：包含 3 个 float 值的向量 [B, G, R]（注意：OpenCV 使用 BGR 顺序！）
+                //cv::Vec3f：包含 3 个 float 值的向量 [R, G, B]
                 //.at<cv::Vec3f>(h, w)：访问第 h 行 w 列的像素，返回一个 cv::Vec3f 向量
                 result.tensor[idx] = rgb.at<cv::Vec3f>(h, w)[c]; //获取第 c 个通道的像素值
             }

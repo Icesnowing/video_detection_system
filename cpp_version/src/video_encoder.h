@@ -12,10 +12,10 @@ extern "C" {
 }
 
 /**
- * FFmpeg-based video encoder.
+ * FFmpeg-based video encoder with PTS-aware timing.
  *
- * Encodes BGR frames to H.264/H.265 and writes to file,
- * with optional RTSP push streaming.
+ * Encodes BGR frames to H.264/H.265 with proper PTS alignment,
+ * writes to file, with optional RTSP push streaming.
  */
 class VideoEncoder {
 public:
@@ -23,7 +23,7 @@ public:
     ~VideoEncoder();
 
     bool open(int width, int height);
-    bool write(const cv::Mat& frame);
+    bool write(const cv::Mat& frame, double pts_sec = -1.0, uint32_t frame_idx = 0);
     void close();
 
     size_t frame_count() const { return m_frame_count; }
@@ -31,6 +31,7 @@ public:
 private:
     bool init_codec();
     bool init_format();
+    int64_t to_enc_pts(double pts_sec, uint32_t frame_idx);
 
     Config m_cfg;
     int m_enc_width = 0;
@@ -47,5 +48,8 @@ private:
 
     AVPacket* m_pkt = nullptr;
     bool m_is_open = false;
-    int64_t m_pts = 0;
+
+    // PTS tracking
+    int64_t m_enc_pts = 0;
+    uint32_t m_last_frame_idx = 0;
 };

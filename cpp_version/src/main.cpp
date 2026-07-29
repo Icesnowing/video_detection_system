@@ -79,6 +79,12 @@ int main(int argc, char* argv[]) {
                 cfg.yuv_width = std::stoi(size_str.substr(0, x));
                 cfg.yuv_height = std::stoi(size_str.substr(x + 1));
             }
+        } else if (arg == "--fps" && i + 1 < argc) {
+            cfg.output_fps = std::stoi(argv[++i]);
+        } else if (arg == "--hw-accel" && i + 1 < argc) {
+            cfg.hw_accel = argv[++i];
+        } else if (arg == "--hw-device" && i + 1 <argc) {
+            cfg.hw_device = argv[++i];
         } else if (arg == "--benchmark") {
             // Benchmark mode
             InferenceEngine engine(cfg);

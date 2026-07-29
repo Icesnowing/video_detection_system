@@ -6,12 +6,26 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <cstdint>
 
 struct Detection {
     cv::Rect bbox;
     float confidence;
     int class_id;
     std::string class_name;
+    int64_t pts = 0;        // PTS timestamp aligned with source frame
+    double pts_sec = 0.0;   // PTS in seconds
+    int frame_idx = 0;
+};
+
+struct DecodedFrame {
+    cv::Mat data;           // BGR image data (decoded from YUV)
+    int64_t pts = 0;        // Presentation timestamp (in stream time_base units)
+    double pts_sec = 0.0;   // PTS converted to seconds
+    int64_t duration = 0;   // Frame duration (in time_base units)
+    uint32_t frame_idx = 0; // decoded frame index
+    bool is_keyframe = false;
+    bool valid = false;
 };
 
 struct Config {
@@ -39,8 +53,11 @@ struct Config {
     std::string yuv_output_format = "i420";
 
     // Decoder
-    std::string hw_accel = "none";
-    std::string hw_device = "";
+    std::string hw_accel = "none";      // "vaapi", "cuda", "qsv", "none"
+    std::string hw_device = "";         // e.g. "/dev/dri/renderD128" for VAAPI
+    bool decoder_output_yuv = false;    // internal YUV output (avoids BGR conv overhead)
+    double max_jitter_ms = 50.0;        // max PTS jitter tolerated before frame correction
+    int max_consecutive_drops = 3;      // max consecutive dropped/corrupt frames before abort
 
     // Inference
     std::string provider = "CPUExecutionProvider";

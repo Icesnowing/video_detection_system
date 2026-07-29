@@ -7,10 +7,12 @@
 #include "video_encoder.h"
 #include "yuv_encoder.h"
 
+#include <iomanip>
 #include <iostream>
 #include <chrono>
 #include <csignal>
 #include <atomic>
+#include <cmath>
 
 static std::atomic<bool> g_running{true};
 
@@ -51,7 +53,7 @@ public:
             return false;
         }
 
-        m_inference.warmup(5);
+        //m_inference.warmup(5);
 
         int out_w = (m_cfg.source_type == "yuv") ? m_yuv_decoder.width() : m_decoder.width();
         int out_h = (m_cfg.source_type == "yuv") ? m_yuv_decoder.height() : m_decoder.height();
@@ -84,15 +86,28 @@ public:
         int frame_idx = 0;
 
         while (g_running) {
-            // 1. Decode
-            cv::Mat frame;
-            bool ok = (m_cfg.source_type == "yuv")
-                ? m_yuv_decoder.read(frame)
-                : m_decoder.read(frame);
+            // 1. Decode (with PTS timestamps)
+            DecodedFrame dec_frame;
+            bool ok;
+            if (m_cfg.source_type == "yuv") {
+                cv::Mat yuv_frame;
+                ok = m_yuv_decoder.read(yuv_frame);
+                if (ok) {
+                    dec_frame.data = yuv_frame;
+                    dec_frame.pts_sec = frame_idx * (1.0 / m_cfg.output_fps);
+                    dec_frame.pts = frame_idx;
+                    dec_frame.frame_idx = frame_idx;
+                    dec_frame.valid = true;
+                }
+            } else {
+                ok = m_decoder.read(dec_frame);
+            }
             if (!ok) {
                 std::cout << "[Pipeline] End of stream." << std::endl;
                 break;
             }
+
+            cv::Mat& frame = dec_frame.data;
 
             // 2. Preprocess
             auto preproc = m_preprocessor.process(frame);
@@ -104,7 +119,7 @@ public:
             std::vector<int64_t> output_shape;
             m_inference.infer(preproc.tensor, preproc.shape,
                               output_data, output_shape);
-            
+
             auto t1 = std::chrono::high_resolution_clock::now();
             double latency = std::chrono::duration<double, std::milli>(t1 - t0).count();
             total_inf_time += latency;
@@ -116,16 +131,23 @@ public:
                 preproc.ratio_w, preproc.ratio_h,
                 preproc.pad_left, preproc.pad_top);
 
+            // Stamp detections with frame PTS
+            for (auto& d : detections) {
+                d.pts = dec_frame.pts;
+                d.pts_sec = dec_frame.pts_sec;
+                d.frame_idx = dec_frame.frame_idx;
+            }
+
             // 5. Render
             m_renderer.draw(frame, detections);
 
-            // 6. Encode
+            // 6. Encode (with PTS for timing)
             bool is_yuv_out = m_cfg.output_path.size() >= 4 &&
                               m_cfg.output_path.substr(m_cfg.output_path.size() - 4) == ".yuv";
             if (is_yuv_out) {
                 m_yuv_encoder.write(frame);
             } else {
-                m_encoder.write(frame);
+                m_encoder.write(frame, dec_frame.pts_sec, dec_frame.frame_idx);
             }
 
             // 7. Display
@@ -136,10 +158,10 @@ public:
 
             frame_idx++;
 
-            // Logging every 2 seconds
+            // Logging every 1 seconds
             auto now = std::chrono::high_resolution_clock::now();
             double elapsed = std::chrono::duration<double>(now - last_log).count();
-            if (elapsed >= 2.0) {
+            if (elapsed >= 1.0) {
                 double total_elapsed = std::chrono::duration<double>(now - t_start).count();
                 double fps = frame_idx / total_elapsed;
                 double avg_lat = total_inf_time / frame_idx;
@@ -147,7 +169,8 @@ public:
                 std::cout << "[Pipeline] Frame " << frame_idx
                           << " | FPS: " << fps
                           << " | Inf: " << avg_lat << "ms"
-                          << " | Det: " << detections.size() << std::endl;
+                          << " | Det: " << detections.size()
+                          << " | PTS: " << dec_frame.pts_sec << "s" << std::endl;
 
                 last_log = now;
             }
