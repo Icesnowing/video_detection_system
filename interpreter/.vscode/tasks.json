@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake-configure-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DCMAKE_PREFIX_PATH=../../third_party/onnxruntime",
+                ".."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/cpp_version/build"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake-build-debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                ".",
+                "--",
+                "-j$(nproc)"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/cpp_version/build"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc",
+            "dependsOn": [
+                "cmake-configure-debug"
+            ]
+        }
+    ]
+}

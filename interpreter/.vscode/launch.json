@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with WSL GDB",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/cpp_version/build/video_detection",
+            "args": ["--source", "video", "--sample", "skip","--sample-skip","10", "--path", "data/1.mp4"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "${workspaceFolder}/third_party/onnxruntime/lib:${env:LD_LIBRARY_PATH}"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${workspaceFolder}/gdb_wrapper.sh",
+            "preLaunchTask": "cmake-build-debug",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set disable-randomization to off",
+                    "text": "set disable-randomization off",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

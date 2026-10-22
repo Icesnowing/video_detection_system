@@ -1,0 +1,7 @@
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/video_detection.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/edit_cache.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/rebuild_cache.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/list_install_components.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/install.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/install/local.dir
+/mnt/e/AI/video_detection_system/cpp_version/build/CMakeFiles/install/strip.dir
