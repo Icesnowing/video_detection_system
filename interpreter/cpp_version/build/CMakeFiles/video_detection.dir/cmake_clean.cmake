@@ -1,5 +1,4 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/video_detection.dir/link.d"
   "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o"
   "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o.d"
   "CMakeFiles/video_detection.dir/src/main.cpp.o"

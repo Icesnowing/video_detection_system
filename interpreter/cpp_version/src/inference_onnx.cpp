@@ -1,7 +1,8 @@
 #include "inference_onnx.h"
-#include <iostream>
+#include "trace_log.h"
 #include <chrono>
 #include <algorithm>
+#include <string>
 
 InferenceEngine::InferenceEngine(const Config& cfg) : m_cfg(cfg) {
     m_env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "VideoDetection"); //创建ONNX Runtime环境
@@ -58,18 +59,19 @@ bool InferenceEngine::load() {
             m_output_shape = tensor_info.GetShape();
         }
 
-        std::cout << "[Inference] Model loaded: " << m_cfg.onnx_path << std::endl;
-        std::cout << "  Input shape: {";
+        std::string shape = "{";
         for (size_t i = 0; i < m_input_shape.size(); i++) {
-            if (i > 0) std::cout << ", ";
-            std::cout << m_input_shape[i];
+            if (i > 0) shape += ", ";
+            shape += std::to_string(m_input_shape[i]);
         }
-        std::cout << "}" << std::endl;
+        shape += "}";
+        LOGI("Model loaded: %s", m_cfg.onnx_path.c_str());
+        LOGI("Input shape: %s", shape.c_str());
 
         m_loaded = true;
         return true;
     } catch (const Ort::Exception& e) {
-        std::cerr << "[Inference] ERROR: " << e.what() << std::endl;
+        LOGE("%s", e.what());
         return false;
     }
 }
@@ -120,7 +122,7 @@ bool InferenceEngine::infer(
 
         return true;
     } catch (const Ort::Exception& e) {
-        std::cerr << "[Inference] Runtime error: " << e.what() << std::endl;
+        LOGE("Runtime error: %s", e.what());
         return false;
     }
 }
@@ -135,11 +137,11 @@ void InferenceEngine::warmup(int num_runs) {
     std::vector<float> out;
     std::vector<int64_t> out_shape;
 
-    std::cout << "[Inference] Warming up (" << num_runs << " runs)..." << std::endl;
+    LOGI("Warming up (%d runs)...", num_runs);
     for (int i = 0; i < num_runs; i++) {
         infer(dummy, shape, out, out_shape);
     }
-    std::cout << "[Inference] Warmup complete." << std::endl;
+    LOGI("Warmup complete.");
 }
 
 void InferenceEngine::benchmark(int num_runs) {
@@ -168,10 +170,10 @@ void InferenceEngine::benchmark(int num_runs) {
     double mean = sum / latencies.size();
     double median = latencies[latencies.size() / 2];
 
-    std::cout << "[Inference] Benchmark (" << num_runs << " runs):" << std::endl;
-    std::cout << "  Mean:   " << mean << " ms" << std::endl;
-    std::cout << "  Median: " << median << " ms" << std::endl;
-    std::cout << "  Min:    " << latencies.front() << " ms" << std::endl;
-    std::cout << "  Max:    " << latencies.back() << " ms" << std::endl;
-    std::cout << "  FPS:    " << (1000.0 / mean) << std::endl;
+    LOGI("Benchmark (%d runs):", num_runs);
+    LOGI("Mean:   %.3f ms", mean);
+    LOGI("Median: %.3f ms", median);
+    LOGI("Min:    %.3f ms", latencies.front());
+    LOGI("Max:    %.3f ms", latencies.back());
+    LOGI("FPS:    %.2f", 1000.0 / mean);
 }

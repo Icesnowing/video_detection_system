@@ -1,5 +1,5 @@
 #include "video_decoder.h"
-#include <iostream>
+#include "trace_log.h"
 #include <cstring>
 #include <cmath>
 
@@ -23,9 +23,7 @@ bool VideoDecoder::open() {
 
     m_eof = false;
     m_is_open = true;
-    std::cout << "[Decoder] Opened: " << m_width << "x" << m_height
-              << " @ " << m_fps << "fps"
-              << " hw=" << m_cfg.hw_accel << std::endl;
+    LOGI("Opened: %dx%d @ %.2ffps hw=%s", m_width, m_height, m_fps, m_cfg.hw_accel.c_str());
     return true;
 }
 
@@ -56,13 +54,13 @@ bool VideoDecoder::open_input() {
     av_dict_free(&opts);
     if (ret < 0) {
         char eb[256]; av_strerror(ret, eb, sizeof(eb));
-        std::cerr << "[Decoder] avformat_open_input: " << eb << std::endl;
+        LOGE("avformat_open_input: %s", eb);
         return false;
     }
 
     ret = avformat_find_stream_info(m_fmt_ctx, nullptr);
     if (ret < 0) {
-        std::cerr << "[Decoder] avformat_find_stream_info failed" << std::endl;
+        LOGE("avformat_find_stream_info failed");
         return false;
     }
     return true;
@@ -80,7 +78,7 @@ bool VideoDecoder::find_video_stream() {
         }
     }
     if (m_video_stream_idx < 0) {
-        std::cerr << "[Decoder] No video stream" << std::endl;
+        LOGE("No video stream");
         return false;
     }
 
@@ -122,7 +120,7 @@ bool VideoDecoder::find_video_stream() {
 
     m_codec = avcodec_find_decoder(params->codec_id);
     if (!m_codec) {
-        std::cerr << "[Decoder] Codec not found" << std::endl;
+        LOGE("Codec not found");
         return false;
     }
     return true;
@@ -146,7 +144,7 @@ bool VideoDecoder::setup_decoder() {
 
     int ret = avcodec_open2(m_codec_ctx, m_codec, nullptr);
     if (ret < 0) {
-        std::cerr << "[Decoder] avcodec_open2 failed" << std::endl;
+        LOGE("avcodec_open2 failed");
         return false;
     }
     return true;
@@ -161,7 +159,7 @@ bool VideoDecoder::init_hw_decoder() {
         m_cfg.hw_device.empty() ? nullptr : m_cfg.hw_device.c_str(),
         nullptr, 0);
     if (ret < 0) {
-        std::cerr << "[Decoder] HW device create failed, falling back to SW" << std::endl;
+        LOGW("HW device create failed, falling back to SW");
         m_hw_type = HW_NONE;
         m_codec_ctx->thread_count = 0;
         return avcodec_open2(m_codec_ctx, m_codec, nullptr) >= 0;
@@ -181,7 +179,7 @@ bool VideoDecoder::init_hw_decoder() {
 
     ret = avcodec_open2(m_codec_ctx, m_codec, nullptr);
     if (ret < 0) {
-        std::cerr << "[Decoder] avcodec_open2 (HW) failed, fallback SW" << std::endl;
+        LOGW("avcodec_open2 (HW) failed, fallback SW");
         av_buffer_unref(&m_hw_ctx);
         m_hw_type = HW_NONE;
         m_codec_ctx->hw_device_ctx = nullptr;
@@ -189,7 +187,7 @@ bool VideoDecoder::init_hw_decoder() {
         return avcodec_open2(m_codec_ctx, m_codec, nullptr) >= 0;
     }
 
-    std::cout << "[Decoder] Hardware decoding enabled (" << m_cfg.hw_accel << ")" << std::endl;
+    LOGI("Hardware decoding enabled (%s)", m_cfg.hw_accel.c_str());
     return true;
 }
 
@@ -273,7 +271,7 @@ bool VideoDecoder::decode_packet() {
         if (ret < 0) {
             m_consecutive_drops++;
             if (m_consecutive_drops > m_cfg.max_consecutive_drops) {
-                std::cerr << "[Decoder] Too many decode errors, skipping packet" << std::endl;
+                LOGE("Too many decode errors, skipping packet");
                 return false;
             }
             continue;
@@ -302,7 +300,7 @@ bool VideoDecoder::receive_and_convert(DecodedFrame& out) {
     if (m_hw_type != HW_NONE && src->format == (int)m_src_pix_fmt) {
         ret = av_hwframe_transfer_data(m_frame, src, 0);
         if (ret < 0) {
-            std::cerr << "[Decoder] HW→CPU transfer failed" << std::endl;
+            LOGE("HW→CPU transfer failed");
             av_frame_unref(src);
             return false;
         }
@@ -395,8 +393,7 @@ bool VideoDecoder::fix_jitter(DecodedFrame& frame) {
 
     if (frame.pts < m_expected_next_pts && jitter_ms > m_cfg.max_jitter_ms) {
         // Frame arrived too early or is a duplicate — drop it
-        std::cerr << "[Decoder] Dropping early/duplicate frame: PTS jitter="
-                  << jitter_ms << "ms" << std::endl;
+        LOGW("Dropping early/duplicate frame: PTS jitter=%.2fms", jitter_ms);
         return false;
     }
 
@@ -406,8 +403,8 @@ bool VideoDecoder::fix_jitter(DecodedFrame& frame) {
     fill_count = std::min(fill_count, (int)m_cfg.max_consecutive_drops);
 
     if (fill_count > 0) {
-        std::cout << "[Decoder] PTS gap " << (gap * m_time_base.num * 1000.0 / m_time_base.den)
-                  << "ms, inserting " << fill_count << " fill frame(s)" << std::endl;
+        LOGI("PTS gap %.2fms, inserting %d fill frame(s)",
+             gap * m_time_base.num * 1000.0 / m_time_base.den, fill_count);
     }
 
     for (int i = 0; i < fill_count && m_frame_buf.size() < kMaxBufSize; i++) {
@@ -446,6 +443,5 @@ void VideoDecoder::close() {
     if (m_hw_frame) { av_frame_free(&m_hw_frame); }
     if (m_bgr_frame) { av_frame_free(&m_bgr_frame); }
 
-    std::cout << "[Decoder] Closed. Frames: decoded=" << m_decode_idx
-              << " displayed=" << m_display_idx << std::endl;
+    LOGI("Closed. Frames: decoded=%u displayed=%u", m_decode_idx, m_display_idx);
 }

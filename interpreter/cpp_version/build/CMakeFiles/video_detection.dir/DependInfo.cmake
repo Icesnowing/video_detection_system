@@ -8,15 +8,14 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/e/AI/video_detection_system/cpp_version/src/inference_onnx.cpp" "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/main.cpp" "CMakeFiles/video_detection.dir/src/main.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/main.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/postprocessor.cpp" "CMakeFiles/video_detection.dir/src/postprocessor.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/postprocessor.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/preprocessor.cpp" "CMakeFiles/video_detection.dir/src/preprocessor.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/preprocessor.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/video_decoder.cpp" "CMakeFiles/video_detection.dir/src/video_decoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/video_decoder.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/video_encoder.cpp" "CMakeFiles/video_detection.dir/src/video_encoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/video_encoder.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/yuv_decoder.cpp" "CMakeFiles/video_detection.dir/src/yuv_decoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/yuv_decoder.cpp.o.d"
-  "/mnt/e/AI/video_detection_system/cpp_version/src/yuv_encoder.cpp" "CMakeFiles/video_detection.dir/src/yuv_encoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/yuv_encoder.cpp.o.d"
-  "" "video_detection" "gcc" "CMakeFiles/video_detection.dir/link.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/inference_onnx.cpp" "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/main.cpp" "CMakeFiles/video_detection.dir/src/main.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/main.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/postprocessor.cpp" "CMakeFiles/video_detection.dir/src/postprocessor.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/postprocessor.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/preprocessor.cpp" "CMakeFiles/video_detection.dir/src/preprocessor.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/preprocessor.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/video_decoder.cpp" "CMakeFiles/video_detection.dir/src/video_decoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/video_decoder.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/video_encoder.cpp" "CMakeFiles/video_detection.dir/src/video_encoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/video_encoder.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/yuv_decoder.cpp" "CMakeFiles/video_detection.dir/src/yuv_decoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/yuv_decoder.cpp.o.d"
+  "/mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/yuv_encoder.cpp" "CMakeFiles/video_detection.dir/src/yuv_encoder.cpp.o" "gcc" "CMakeFiles/video_detection.dir/src/yuv_encoder.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

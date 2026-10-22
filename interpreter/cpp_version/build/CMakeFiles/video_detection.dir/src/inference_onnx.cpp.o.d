@@ -1,8 +1,8 @@
 CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o: \
- /mnt/e/AI/video_detection_system/cpp_version/src/inference_onnx.cpp \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/inference_onnx.cpp \
  /usr/include/stdc-predef.h \
- /mnt/e/AI/video_detection_system/cpp_version/src/inference_onnx.h \
- /mnt/e/AI/video_detection_system/cpp_version/src/common.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/inference_onnx.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/common.h \
  /usr/include/opencv4/opencv2/opencv.hpp \
  /usr/include/opencv4/opencv2/opencv_modules.hpp \
  /usr/include/opencv4/opencv2/core.hpp \
@@ -445,9 +445,11 @@ CMakeFiles/video_detection.dir/src/inference_onnx.cpp.o: \
  /usr/include/opencv4/opencv2/video.hpp \
  /usr/include/opencv4/opencv2/video/tracking.hpp \
  /usr/include/opencv4/opencv2/video/background_segm.hpp \
- /mnt/e/AI/video_detection_system/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_cxx_api.h \
- /mnt/e/AI/video_detection_system/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_c_api.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_cxx_api.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_c_api.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
- /mnt/e/AI/video_detection_system/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_float16.h \
- /mnt/e/AI/video_detection_system/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_cxx_inline.h \
- /usr/include/c++/13/iterator /usr/include/c++/13/bits/stream_iterator.h
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_float16.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/../third_party/onnxruntime/include/onnxruntime/onnxruntime_cxx_inline.h \
+ /usr/include/c++/13/iterator /usr/include/c++/13/bits/stream_iterator.h \
+ /mnt/e/AI/video_detection/video_detection_system/interpreter/cpp_version/src/trace_log.h \
+ /usr/include/c++/13/cstdarg

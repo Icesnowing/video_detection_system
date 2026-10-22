@@ -17,6 +17,7 @@
  */
 
 #include "pipeline.h"
+#include "trace_log.h"
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -40,6 +41,7 @@ static void print_usage(const char* prog) {
               << "  --sample-skip N     Skip: run detection every N frames (default: 10)\n"
               << "  --sample-interval S Interval: run detection every S seconds (default: 1.0)\n"
               << "  --fps INT           Output frame rate for encoder (default: 30)\n"
+              << "  --log PATH          Log file (default: video_detect_<create time>.log)\n"
               << "  --benchmark         Run inference benchmark\n"
               << "  --help              Show this help\n"
               << std::endl;
@@ -47,6 +49,8 @@ static void print_usage(const char* prog) {
 
 int main(int argc, char* argv[]) {
     Config cfg;
+    bool run_benchmark = false;
+    bool show_help = false;
 
     // Parse CLI arguments
     for (int i = 1; i < argc; i++) {
@@ -95,34 +99,57 @@ int main(int argc, char* argv[]) {
             cfg.hw_accel = argv[++i];
         } else if (arg == "--hw-device" && i + 1 <argc) {
             cfg.hw_device = argv[++i];
+        } else if (arg == "--log" && i + 1 < argc) {
+            cfg.log_path = argv[++i];
         } else if (arg == "--benchmark") {
-            // Benchmark mode
+            run_benchmark = true;
+        } else if (arg == "--help" || arg == "-h") {
+            show_help = true;
+        }
+    }
+
+    if (show_help) {
+        print_usage(argv[0]);
+        return 0;
+    }
+
+    if (!trace_log_open(cfg.log_path.empty() ? nullptr : cfg.log_path.c_str())) {
+        LOGE("Error: cannot open log file: %s", g_trace_log_path.c_str());
+        return 1;
+    }
+    cfg.log_path = g_trace_log_path;
+    LOGI("Writing log to %s", cfg.log_path.c_str());
+
+    if (run_benchmark) {
+        {
             InferenceEngine engine(cfg);
             if (engine.load()) {
                 engine.warmup(10);
                 engine.benchmark(100);
             }
-            return 0;
-        } else if (arg == "--help" || arg == "-h") {
-            print_usage(argv[0]);
-            return 0;
         }
+        trace_log_close();
+        return 0;
     }
 
     if (cfg.source_path.empty()) {
-        std::cerr << "Error: --path is required." << std::endl;
+        LOGE("--path is required.");
         print_usage(argv[0]);
+        trace_log_close();
         return 1;
     }
 
-    DetectionPipeline pipeline(cfg);
-
-    try {
-        pipeline.run();
-    } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
-        return 1;
+    int rc = 0;
+    {
+        DetectionPipeline pipeline(cfg);
+        try {
+            pipeline.run();
+        } catch (const std::exception& e) {
+            LOGE("Fatal error: %s", e.what());
+            rc = 1;
+        }
     }
 
-    return 0;
+    trace_log_close();
+    return rc;
 }

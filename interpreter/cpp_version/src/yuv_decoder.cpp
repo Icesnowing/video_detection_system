@@ -1,5 +1,5 @@
 #include "yuv_decoder.h"
-#include <iostream>
+#include "trace_log.h"
 #include <cstring>
 
 YuvDecoder::YuvDecoder(const Config& cfg) : m_cfg(cfg) {}
@@ -20,14 +20,13 @@ bool YuvDecoder::open() {
     m_frame_size = calc_frame_size();
 
     if (m_width <= 0 || m_height <= 0) {
-        std::cerr << "[YuvDecoder] Invalid dimensions: "
-                  << m_width << "x" << m_height << std::endl;
+        LOGE("Invalid dimensions: %dx%d", m_width, m_height);
         return false;
     }
 
     m_file = fopen(m_cfg.source_path.c_str(), "rb");
     if (!m_file) {
-        std::cerr << "[YuvDecoder] Cannot open: " << m_cfg.source_path << std::endl;
+        LOGE("Cannot open: %s", m_cfg.source_path.c_str());
         return false;
     }
 
@@ -45,7 +44,7 @@ bool YuvDecoder::open() {
         m_cvt_code = cv::COLOR_YUV2BGR_YUYV;
         m_yuv_mat = cv::Mat(m_height, m_width, CV_8UC2);
     } else {
-        std::cerr << "[YuvDecoder] Unsupported format: " << fmt << std::endl;
+        LOGE("Unsupported format: %s", fmt.c_str());
         fclose(m_file);
         m_file = nullptr;
         return false;
@@ -54,10 +53,8 @@ bool YuvDecoder::open() {
     m_yuv_buf.resize(m_frame_size);
     m_is_open = true;
 
-    std::cout << "[YuvDecoder] Opened: " << m_cfg.source_path
-              << " " << m_width << "x" << m_height
-              << " format=" << fmt
-              << " framesize=" << m_frame_size << std::endl;
+    LOGI("Opened: %s %dx%d format=%s framesize=%zu",
+         m_cfg.source_path.c_str(), m_width, m_height, fmt.c_str(), m_frame_size);
     return true;
 }
 
@@ -67,7 +64,7 @@ bool YuvDecoder::read(cv::Mat& frame) {
     size_t n = fread(m_yuv_buf.data(), 1, m_frame_size, m_file);
     if (n != m_frame_size) {
         if (n == 0) return false;
-        std::cerr << "[YuvDecoder] Short read: " << n << "/" << m_frame_size << std::endl;
+        LOGE("Short read: %zu/%zu", n, m_frame_size);
         return false;
     }
 
@@ -83,5 +80,5 @@ void YuvDecoder::close() {
         fclose(m_file);
         m_file = nullptr;
     }
-    std::cout << "[YuvDecoder] Closed. Total frames: " << m_frame_count << std::endl;
+    LOGI("Closed. Total frames: %zu", m_frame_count);
 }

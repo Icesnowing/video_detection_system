@@ -1,5 +1,5 @@
 #include "yuv_encoder.h"
-#include <iostream>
+#include "trace_log.h"
 #include <cstring>
 
 YuvEncoder::YuvEncoder(const Config& cfg) : m_cfg(cfg) {}
@@ -61,13 +61,13 @@ bool YuvEncoder::open(int width, int height) {
     m_frame_size = calc_frame_size();
 
     if (m_width <= 0 || m_height <= 0) {
-        std::cerr << "[YuvEncoder] Invalid dimensions" << std::endl;
+        LOGE("Invalid dimensions");
         return false;
     }
 
     m_file = fopen(m_cfg.output_path.c_str(), "wb");
     if (!m_file) {
-        std::cerr << "[YuvEncoder] Cannot open: " << m_cfg.output_path << std::endl;
+        LOGE("Cannot open: %s", m_cfg.output_path.c_str());
         return false;
     }
 
@@ -77,7 +77,7 @@ bool YuvEncoder::open(int width, int height) {
     } else if (fmt == "nv12" || fmt == "nv21" || fmt == "yuyv" || fmt == "yuy2") {
         m_cvt_code = cv::COLOR_BGR2YUV_I420;  // convert to I420 first, then rearrange
     } else {
-        std::cerr << "[YuvEncoder] Unsupported format: " << fmt << std::endl;
+        LOGE("Unsupported format: %s", fmt.c_str());
         fclose(m_file);
         m_file = nullptr;
         return false;
@@ -88,9 +88,7 @@ bool YuvEncoder::open(int width, int height) {
     m_yuv_buf.resize(m_frame_size);
     m_is_open = true;
 
-    std::cout << "[YuvEncoder] Opened: " << m_cfg.output_path
-              << " " << m_width << "x" << m_height
-              << " format=" << fmt << std::endl;
+    LOGI("Opened: %s %dx%d format=%s", m_cfg.output_path.c_str(), m_width, m_height, fmt.c_str());
     return true;
 }
 
@@ -131,5 +129,5 @@ void YuvEncoder::close() {
         fclose(m_file);
         m_file = nullptr;
     }
-    std::cout << "[YuvEncoder] Closed. Total frames: " << m_frame_count << std::endl;
+    LOGI("Closed. Total frames: %zu", m_frame_count);
 }

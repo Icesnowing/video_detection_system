@@ -1,5 +1,5 @@
 #include "video_encoder.h"
-#include <iostream>
+#include "trace_log.h"
 #include <cmath>
 
 VideoEncoder::VideoEncoder(const Config& cfg) : m_cfg(cfg) {
@@ -17,8 +17,7 @@ bool VideoEncoder::open(int width, int height) {
     if (!init_codec()) return false;
 
     m_is_open = true;
-    std::cout << "[Encoder] Opened: " << m_enc_width << "x" << m_enc_height
-              << " -> " << m_cfg.output_path << std::endl;
+    LOGI("Opened: %dx%d -> %s", m_enc_width, m_enc_height, m_cfg.output_path.c_str());
     return true;
 }
 
@@ -30,7 +29,7 @@ bool VideoEncoder::init_format() {
     int ret = avformat_alloc_output_context2(
         &m_fmt_ctx, nullptr, nullptr, out_path.c_str());
     if (ret < 0 || !m_fmt_ctx) {
-        std::cerr << "[Encoder] Failed to create output context" << std::endl;
+        LOGE("Failed to create output context");
         return false;
     }
     return true;
@@ -41,7 +40,7 @@ bool VideoEncoder::init_codec() {
     if (!m_codec)
         m_codec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (!m_codec) {
-        std::cerr << "[Encoder] Codec " << m_cfg.codec << " not found" << std::endl;
+        LOGE("Codec %s not found", m_cfg.codec.c_str());
         return false;
     }
 
@@ -67,7 +66,7 @@ bool VideoEncoder::init_codec() {
     int ret = avcodec_open2(m_codec_ctx, m_codec, nullptr);
     if (ret < 0) {
         char eb[256]; av_strerror(ret, eb, sizeof(eb));
-        std::cerr << "[Encoder] avcodec_open2: " << eb << std::endl;
+        LOGE("avcodec_open2: %s", eb);
         return false;
     }
 
@@ -76,14 +75,14 @@ bool VideoEncoder::init_codec() {
     if (!(m_fmt_ctx->oformat->flags & AVFMT_NOFILE)) {
         ret = avio_open(&m_fmt_ctx->pb, m_cfg.output_path.c_str(), AVIO_FLAG_WRITE);
         if (ret < 0) {
-            std::cerr << "[Encoder] avio_open failed" << std::endl;
+            LOGE("avio_open failed");
             return false;
         }
     }
 
     ret = avformat_write_header(m_fmt_ctx, nullptr);
     if (ret < 0) {
-        std::cerr << "[Encoder] avformat_write_header failed" << std::endl;
+        LOGE("avformat_write_header failed");
         return false;
     }
 
@@ -168,5 +167,5 @@ void VideoEncoder::close() {
     if (m_pkt) { av_packet_free(&m_pkt); }
     if (m_yuv_frame) { av_frame_free(&m_yuv_frame); }
 
-    std::cout << "[Encoder] Closed. Total frames: " << m_frame_count << std::endl;
+    LOGI("Closed. Total frames: %zu", m_frame_count);
 }

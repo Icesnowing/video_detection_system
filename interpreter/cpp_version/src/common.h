@@ -78,6 +78,9 @@ struct Config {
     int sample_skip_n = 10;               // "skip": run detection every N frames
     double sample_interval_sec = 1.0;     // "interval": run detection every N seconds
 
+    // Empty: video_detect_<local create time>.log. --log sets an explicit path.
+    std::string log_path;
+
     // Display
     bool show_window = true;
     std::string window_name = "Video Detection (C++)";

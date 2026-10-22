@@ -93,8 +93,13 @@ set(SOURCES
     src/yuv_encoder.cpp
 )
 
+# Header-only logging. Listed so IDEs and dependency scans see the file.
+set(HEADERS
+    src/trace_log.h
+)
+
 # ---- Executable ----
-add_executable(video_detection ${SOURCES})
+add_executable(video_detection ${SOURCES} ${HEADERS})
 
 target_include_directories(video_detection PRIVATE
     src/
