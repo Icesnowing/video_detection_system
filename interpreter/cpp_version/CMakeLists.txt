@@ -96,6 +96,10 @@ set(SOURCES
 # Header-only logging. Listed so IDEs and dependency scans see the file.
 set(HEADERS
     src/trace_log.h
+    src/blocking_ring_queue.h
+    src/frame_packet.h
+    src/ordered_merge.h
+    src/pipeline.h
 )
 
 # ---- Executable ----

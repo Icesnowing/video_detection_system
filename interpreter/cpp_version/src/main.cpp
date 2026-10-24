@@ -119,7 +119,14 @@ int main(int argc, char* argv[]) {
     }
     cfg.log_path = g_trace_log_path;
     LOGI("Writing log to %s", cfg.log_path.c_str());
-
+    //把config的配置参数写入日志
+    LOGI("source_type: %s, source_path: %s, onnx_path: %s, confidence_threshold: %.4f, nms_threshold: %.4f, capture_width: %d, capture_height: %d, "
+        "output_path: %s, codec: %s, yuv_format: %s, yuv_size: %d*%d, "
+        "output_fps: %d, sample_mode: %s, sample_skip_n: %d, sample_interval_sec: %.2f, hw_accel: %s, hw_device: %s", 
+        cfg.source_type.c_str(), cfg.source_path.c_str(), cfg.onnx_path.c_str(), cfg.confidence_threshold, cfg.nms_threshold, 
+        cfg.capture_width, cfg.capture_height, cfg.output_path.c_str(), cfg.codec.c_str(), cfg.yuv_format.c_str(), 
+        cfg.yuv_width, cfg.yuv_height, cfg.output_fps, cfg.sample_mode.c_str(), cfg.sample_skip_n, cfg.sample_interval_sec, 
+        cfg.hw_accel.c_str(), cfg.hw_device.c_str());
     if (run_benchmark) {
         {
             InferenceEngine engine(cfg);

@@ -78,6 +78,9 @@ struct Config {
     int sample_skip_n = 10;               // "skip": run detection every N frames
     double sample_interval_sec = 1.0;     // "interval": run detection every N seconds
 
+    // Parallel pipeline: slots per ring queue (Q1, Q_det, Q_infer, Q_skip, Q4)
+    int pipeline_queue_capacity = 2;
+
     // Empty: video_detect_<local create time>.log. --log sets an explicit path.
     std::string log_path;
 
