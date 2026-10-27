@@ -32,8 +32,8 @@ def run_evaluate(args: argparse.Namespace) -> None:
     names = metrics.names
     ap50, ap5095 = metrics.box.ap50, metrics.box.ap
     # 准确率
-    precision = metrics.box.precision
-    recall = metrics.box.recall
+    precision = metrics.box.p
+    recall = metrics.box.r
     print("\n===== 评估结果 =====")
     print(f"  mAP@0.5      : {map50:.4f}  (合格线 {ACCEPT_MAP50})")
     print(f"  mAP@0.5:0.95 : {map5095:.4f}")

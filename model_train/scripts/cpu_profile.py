@@ -36,7 +36,8 @@ def apply_cpu_prepare(args: argparse.Namespace) -> None:
         args.neg_ratio = 0.05
     print(
         "[cpu] 数据集预设: "
-        f"train 每类≤{args.max_per_class_by_split.get('train2017', args.max_per_class)} 张正样本, "
+        f"train 每类≤{args.max_per_class_by_split.get('train2017', args.max_per_class)} 张正样本"
+        f"（小/中/大框各约 1/3）, "
         f"val 每类≤{args.max_per_class_by_split.get('val2017', 40)}, "
         f"neg_ratio={args.neg_ratio}"
     )

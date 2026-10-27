@@ -5,7 +5,7 @@ YOLOv8 迁移学习训练脚本（对应方案第 3、4 节）
 用法：
   python scripts/train.py --data data/person_car/dataset.yaml
   python scripts/cli.py train --classes person,car --epochs 100
-  python .\scripts\train.py --model .\model\yolo11n.pt --epochs 100 --patience 30 --imgsz 416 --batch 8 --lr0 1e-4 --resume .\runs\detect\runs\detect\train-4\weights\last.pt --classes car --data .\data\car\dataset.yaml
+  python scripts/train.py --model /model/yolo11n.pt --epochs 100 --patience 30 --imgsz 416 --batch 8 --lr0 1e-4 --resume /runs/detect/train-4/weights/last.pt --classes car --data data/car/dataset.yaml
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def run_train(args: argparse.Namespace) -> None:
     weights = resolve_pretrained_weight(args.model)
     print(f"加载本地预训练权重: {weights}")
     model = YOLO(weights)
-    mosaic = float(getattr(args, "mosaic", 1.0))
+    
     train_args = dict(
         data=args.data,
         epochs=args.epochs,
@@ -40,14 +40,18 @@ def run_train(args: argparse.Namespace) -> None:
         batch=args.batch,
         optimizer=args.optimizer,
         cos_lr=True,
-        warmup_epochs=3,
-        mosaic=mosaic,
+        warmup_epochs=args.warmup_epochs,
+        warmup_bias_lr=args.warmup_bias_lr,
+        lr0=lr0,
+        lrf = args.lrf,
+        freeze=args.freeze,
+        mosaic=args.mosaic,
         fliplr=0.5,
         flipud=0.0,
-        scale=0.5,
+        scale=args.scale,
         hsv_h=0.02, hsv_s=0.7, hsv_v=0.4,
-        degrees = 5,
-        translate=0.1, shear=0.0, perspective=0.0,
+        degrees = args.degrees,
+        translate=args.translate, shear=0.0, perspective=0.0,
         mixup=0.0, copy_paste=0.0,
         device=args.device if args.device else None,
         workers=args.workers,
@@ -58,8 +62,6 @@ def run_train(args: argparse.Namespace) -> None:
         amp=bool(getattr(args, "amp", True)),
         cache=bool(getattr(args, "cache", False)),
     )
-    if lr0 is not None:
-        train_args["lr0"] = lr0
     model.train(**train_args)
 
 
@@ -78,6 +80,14 @@ def main():
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--optimizer", default="SGD", choices=["SGD", "AdamW", "auto"])
     ap.add_argument("--lr0", type=float, default=None)
+    ap.add_argument("--lrf", type=float, default=None)
+    ap.add_argument("--freeze", type=int, default=0, help="冻结前 n 层")
+    ap.add_argument("--mosaic", type=float, default=1.0, help="数据增强：mosaic 等比缩放")
+    ap.add_argument("--warmup_epochs", type=int, default=3, help="预热轮数")
+    ap.add_argument("--warmup_bias_lr", type=float, default=0.01, help="预热轮数学习率")
+    ap.add_argument("--degrees", type=float, default=5, help="数据增强：degrees 旋转角度")
+    ap.add_argument("--translate", type=float, default=0.1, help="数据增强：translate 平移")
+    ap.add_argument("--scale", type=float, default=0.5, help="数据增强：scale 缩放")
     ap.add_argument("--device", default="")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--project", default="runs/detect")

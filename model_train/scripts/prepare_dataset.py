@@ -117,6 +117,69 @@ def load_split(ann_dir: Path, split: str, class_names: list[str]):
     return images, target_anns, id2new
 
 
+# COCO 框尺寸（像素面积）：小 < 32²，中 < 96²，大 ≥ 96²
+_AREA_SMALL = 32 * 32
+_AREA_LARGE = 96 * 96
+_TIER_LABELS = ("小", "中", "大")
+
+
+def _ann_area(ann) -> float:
+    _x, _y, w, h = ann["bbox"]
+    return max(0.0, float(w)) * max(0.0, float(h))
+
+
+def _area_tier(area: float) -> int:
+    if area < _AREA_SMALL:
+        return 0
+    if area < _AREA_LARGE:
+        return 1
+    return 2
+
+
+def _class_size_tier(anns, coco_id: int) -> int | None:
+    """一张图在某一类上的档位：取该类标注框面积的中位数。"""
+    areas = [
+        _ann_area(ann)
+        for ann in anns
+        if ann.get("category_id") == coco_id and _ann_area(ann) > 0
+    ]
+    if not areas:
+        return None
+    areas.sort()
+    mid = len(areas) // 2
+    median = areas[mid] if len(areas) % 2 else (areas[mid - 1] + areas[mid]) / 2
+    return _area_tier(median)
+
+
+def _tier_quotas(n: int) -> list[int]:
+    """把 N 分成三档，余数分给靠前的档，使各档尽量相等。"""
+    base, rem = divmod(max(n, 0), 3)
+    return [base + (1 if i < rem else 0) for i in range(3)]
+
+
+def _take_stratified(tiers: list[list[int]], n: int, rng: random.Random) -> tuple[list[int], list[int]]:
+    """每档按配额抽取；某档不足时从其他档补足，总数不超过 n。"""
+    quotas = _tier_quotas(n)
+    pools = [list(tier) for tier in tiers]
+    for pool in pools:
+        rng.shuffle(pool)
+    chosen: list[int] = []
+    taken = [0, 0, 0]
+    for i, (pool, quota) in enumerate(zip(pools, quotas)):
+        got = pool[:quota]
+        taken[i] = len(got)
+        chosen.extend(got)
+        pools[i] = pool[len(got):]
+    short = n - len(chosen)
+    if short > 0:
+        rest = [(i, idx) for i, pool in enumerate(pools) for idx in pool]
+        rng.shuffle(rest)
+        for i, idx in rest[:short]:
+            chosen.append(idx)
+            taken[i] += 1
+    return chosen, taken
+
+
 def subsample_positives_per_class(
     positives: list,
     class_names: list[str],
@@ -124,27 +187,38 @@ def subsample_positives_per_class(
     max_per_class: int,
     rng: random.Random,
 ) -> list:
-    """每类最多保留 max_per_class 张含该类的正样本图，最终取各类并集（去重）。"""
+    """每类最多保留 max_per_class 张图，按框面积小/中/大各约 1/3，再取各类并集。"""
     if max_per_class <= 0 or not positives:
         return positives
-    buckets: dict[int, list[int]] = {i: [] for i in range(len(class_names))}
-    for idx, (_split, _meta, anns) in enumerate(positives):
-        present = {
-            id2new[ann["category_id"]]
-            for ann in anns
-            if ann["category_id"] in id2new
-        }
-        for cls_idx in present:
-            buckets[cls_idx].append(idx)
+    new2coco = {new: coco for coco, new in id2new.items()}
     keep: set[int] = set()
-    for cls_idx, indices in buckets.items():
-        rng.shuffle(indices)
-        keep.update(indices[:max_per_class])
+    summaries: list[str] = []
+    for cls_idx, name in enumerate(class_names):
+        coco_id = new2coco.get(cls_idx)
+        if coco_id is None:
+            continue
+        tiers: list[list[int]] = [[], [], []]
+        for idx, (_split, _meta, anns) in enumerate(positives):
+            tier = _class_size_tier(anns, coco_id)
+            if tier is not None:
+                tiers[tier].append(idx)
+        if not any(tiers):
+            continue
+        picked, taken = _take_stratified(tiers, max_per_class, rng)
+        keep.update(picked)
+        pool = "/".join(str(len(t)) for t in tiers)
+        got = "/".join(str(n) for n in taken)
+        summaries.append(
+            f"{name}: 池 {_TIER_LABELS[0]}/{_TIER_LABELS[1]}/{_TIER_LABELS[2]}={pool} "
+            f"-> 抽到 {got}（共 {len(picked)}）"
+        )
     out = [positives[i] for i in sorted(keep)]
     print(
-        f"    [子采样] 每类≤{max_per_class}: {len(positives)} -> {len(out)} 张正样本 "
-        f"({', '.join(class_names)})"
+        f"    [子采样] 每类≤{max_per_class}，按框面积小/中/大各约 1/3: "
+        f"{len(positives)} -> {len(out)} 张正样本"
     )
+    for line in summaries:
+        print(f"      {line}")
     return out
 
 
@@ -311,7 +385,7 @@ def main():
         type=int,
         default=0,
         metavar="N",
-        help="每个 COCO 子集内每类最多 N 张正样本图（0=不限制；CPU 训练建议 100~200）",
+        help="每个 COCO 子集内每类最多 N 张正样本图，按框面积小/中/大各约 1/3（0=不限制）",
     )
     ap.add_argument("--cpu", action="store_true", help="应用 CPU 快速构建预设（每类子采样 + 略减负样本）")
     ap.add_argument("--seed", type=int, default=42)

@@ -164,7 +164,7 @@ def main() -> None:
     p_prep.add_argument("--demo", type=int, default=0, metavar="N")
     p_prep.add_argument("--neg-ratio", type=float, default=0.08)
     p_prep.add_argument("--max-per-class", type=int, default=0, metavar="N",
-                        help="每 COCO 子集每类最多 N 张正样本（0=不限）")
+                        help="每 COCO 子集每类最多 N 张正样本，按框面积小/中/大各约 1/3（0=不限）")
     p_prep.add_argument("--cpu", action="store_true", help="CPU 快速构建预设")
     p_prep.add_argument("--seed", type=int, default=42)
     p_prep.add_argument("--overwrite", action="store_true")
@@ -220,7 +220,8 @@ def main() -> None:
     p_pipe.add_argument("--download", action="store_true")
     p_pipe.add_argument("--demo", type=int, default=0, metavar="N")
     p_pipe.add_argument("--neg-ratio", type=float, default=0.08)
-    p_pipe.add_argument("--max-per-class", type=int, default=0, metavar="N")
+    p_pipe.add_argument("--max-per-class", type=int, default=0, metavar="N",
+                        help="每 COCO 子集每类最多 N 张正样本，按框面积小/中/大各约 1/3（0=不限）")
     p_pipe.add_argument("--cpu", action="store_true", help="CPU：子采样数据集 + 快速训练参数")
     p_pipe.add_argument("--seed", type=int, default=42)
     p_pipe.add_argument("--overwrite", action="store_true")
