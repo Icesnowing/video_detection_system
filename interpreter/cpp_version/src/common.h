@@ -30,9 +30,11 @@ struct DecodedFrame {
 
 struct Config {
     // Model
-    std::string onnx_path = "models/yolo11n.onnx";
-    float confidence_threshold = 0.25f;
+    std::string onnx_path = "models/yolo11n_car.onnx";
+    float confidence_threshold = 0.273f;
     float nms_threshold = 0.45f;
+    // Box label. Empty keeps the COCO name for the detected class id.
+    std::string class_name = "car";
     int max_detections = 300;
     int input_width = 640;
     int input_height = 640;

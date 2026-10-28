@@ -30,6 +30,7 @@ static void print_usage(const char* prog) {
               << "  --model PATH        ONNX model path (default: models/yolo11n.onnx)\n"
               << "  --confidence FLOAT  Confidence threshold (default: 0.25)\n"
               << "  --nms FLOAT         NMS IoU threshold (default: 0.45)\n"
+              << "  --class NAME        Label drawn on boxes (default: car)\n"
               << "  --width INT         Capture width (default: 1280)\n"
               << "  --height INT        Capture height (default: 720)\n"
               << "  --yuv-format FMT    YUV format: i420, nv12, nv21, yuyv (default: i420)\n"
@@ -66,6 +67,8 @@ int main(int argc, char* argv[]) {
             cfg.confidence_threshold = std::stof(argv[++i]);
         } else if (arg == "--nms" && i + 1 < argc) {
             cfg.nms_threshold = std::stof(argv[++i]);
+        } else if (arg == "--class" && i + 1 < argc) {
+            cfg.class_name = argv[++i];
         } else if (arg == "--width" && i + 1 < argc) {
             cfg.capture_width = std::stoi(argv[++i]);
             cfg.input_width = cfg.capture_width;
@@ -120,10 +123,10 @@ int main(int argc, char* argv[]) {
     cfg.log_path = g_trace_log_path;
     LOGI("Writing log to %s", cfg.log_path.c_str());
     //把config的配置参数写入日志
-    LOGI("source_type: %s, source_path: %s, onnx_path: %s, confidence_threshold: %.4f, nms_threshold: %.4f, capture_width: %d, capture_height: %d, "
+    LOGI("source_type: %s, source_path: %s, onnx_path: %s, confidence_threshold: %.4f, nms_threshold: %.4f, class_name: %s, capture_width: %d, capture_height: %d, "
         "output_path: %s, codec: %s, yuv_format: %s, yuv_size: %d*%d, "
         "output_fps: %d, sample_mode: %s, sample_skip_n: %d, sample_interval_sec: %.2f, hw_accel: %s, hw_device: %s", 
-        cfg.source_type.c_str(), cfg.source_path.c_str(), cfg.onnx_path.c_str(), cfg.confidence_threshold, cfg.nms_threshold, 
+        cfg.source_type.c_str(), cfg.source_path.c_str(), cfg.onnx_path.c_str(), cfg.confidence_threshold, cfg.nms_threshold, cfg.class_name.c_str(),
         cfg.capture_width, cfg.capture_height, cfg.output_path.c_str(), cfg.codec.c_str(), cfg.yuv_format.c_str(), 
         cfg.yuv_width, cfg.yuv_height, cfg.output_fps, cfg.sample_mode.c_str(), cfg.sample_skip_n, cfg.sample_interval_sec, 
         cfg.hw_accel.c_str(), cfg.hw_device.c_str());

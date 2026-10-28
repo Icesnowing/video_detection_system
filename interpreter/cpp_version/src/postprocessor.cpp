@@ -22,15 +22,6 @@ std::vector<std::string> PostProcessor::get_default_classes() {
 
 PostProcessor::PostProcessor(const Config& cfg) : m_cfg(cfg) {
     m_class_names = get_default_classes();
-
-    // Generate stable colors
-    m_colors.resize(m_class_names.size());
-    for (size_t i = 0; i < m_class_names.size(); i++) {
-        int r = (i * 113 + 67) % 256;
-        int g = (i * 179 + 89) % 256;
-        int b = (i * 241 + 97) % 256;
-        m_colors[i] = cv::Scalar(b, g, r);  // BGR
-    }
 }
 
 std::vector<Detection> PostProcessor::process(
@@ -48,7 +39,7 @@ std::vector<Detection> PostProcessor::process(
 
     if (output_shape.size() < 3) return {};
 
-    int num_classes = output_shape[1] - 4;  // 80 for COCO
+    int num_classes = output_shape[1] - 4;  // 类别数
     int num_predictions = output_shape[2]; // N 个预测框
 
     std::vector<float> scores(num_predictions);
@@ -77,7 +68,7 @@ std::vector<Detection> PostProcessor::process(
         }
 
         if (max_score < m_cfg.confidence_threshold) continue;
-        if (max_class != 0) continue;  // only detect person
+        if (max_class != 0) continue;  // 只检测设置的类别
 
         // Decode bbox: cx, cy, w, h -> x1, y1, x2, y2
         // 将YOLO的 (center_x, center_y, width, height) 格式转换为OpenCV的 (x1, y1, x2, y2) 格式。
@@ -138,8 +129,13 @@ std::vector<Detection> PostProcessor::process(
             det.bbox = cls_boxes[idx];
             det.confidence = cls_scores[idx];
             det.class_id = c;
-            det.class_name = (c < (int)m_class_names.size())
-                ? m_class_names[c] : ("class_" + std::to_string(c));
+            if (!m_cfg.class_name.empty()) {
+                det.class_name = m_cfg.class_name;
+            } else if (c < (int)m_class_names.size()) {
+                det.class_name = m_class_names[c];
+            } else {
+                det.class_name = "class_" + std::to_string(c);
+            }
             detections.push_back(det);
         }
     }
